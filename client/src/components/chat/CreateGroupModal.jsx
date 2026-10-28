@@ -11,6 +11,7 @@ const CreateGroupModal = ({ onClose, onCreated }) => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
   useEffect(() => {
     chatAPI.getAvailableUsers().then(({ data }) => {
@@ -20,6 +21,7 @@ const CreateGroupModal = ({ onClose, onCreated }) => {
   }, []);
 
   const toggleUser = (id) => {
+    setCreateError('');
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
@@ -27,6 +29,7 @@ const CreateGroupModal = ({ onClose, onCreated }) => {
 
   const handleCreate = async () => {
     if (!groupName.trim() || selected.length < 1) return;
+    setCreateError('');
     setCreating(true);
     try {
       const { data } = await chatAPI.createGroup({
@@ -36,20 +39,22 @@ const CreateGroupModal = ({ onClose, onCreated }) => {
       onCreated(data);
       onClose();
     } catch (err) {
-      console.error('Failed to create group');
+      console.error('Failed to create group:', err);
+      setCreateError(err.response?.data?.message || 'Could not create the group. Please try again.');
     } finally {
       setCreating(false);
     }
   };
 
+  const currentUserId = user?._id || user?.id;
   const filtered = users.filter((u) =>
-    u._id !== user._id &&
+    u._id !== currentUserId &&
     (`${u.firstName} ${u.lastName} ${u.email} ${u.role}`).toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2" onClick={onClose}>
+      <div className="flex max-h-[90dvh] w-full max-w-lg flex-col rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Create Group Chat</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
@@ -67,6 +72,7 @@ const CreateGroupModal = ({ onClose, onCreated }) => {
             onChange={(e) => setGroupName(e.target.value)}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
+          {createError && <p role="alert" className="mt-2 text-sm text-red-600">{createError}</p>}
           <div className="relative mt-3">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

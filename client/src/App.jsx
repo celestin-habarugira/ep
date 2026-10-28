@@ -18,9 +18,9 @@ const PrivateRoute = ({ children }) => {
 };
 
 const AppLayout = ({ children }) => (
-  <div className="min-h-screen bg-gray-100">
+  <div className="min-h-screen overflow-x-hidden bg-slate-50">
     <Navbar />
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</main>
+    <main className="mx-auto min-w-0 max-w-7xl px-3 py-4 sm:px-6 sm:py-8 lg:px-8">{children}</main>
   </div>
 );
 

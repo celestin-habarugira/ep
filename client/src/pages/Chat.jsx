@@ -21,7 +21,7 @@ const Chat = () => {
   return (
     <SocketProvider>
       <CallProvider>
-        <div className="flex h-[calc(100vh-8rem)] -mx-4 sm:-mx-6 lg:-mx-8 rounded-xl overflow-hidden shadow-lg border border-gray-200">
+        <div className="-mx-3 flex h-[calc(100vh-7rem)] min-h-[24rem] overflow-hidden rounded-xl border border-gray-200 shadow-lg sm:-mx-6 sm:h-[calc(100vh-8rem)] lg:-mx-8">
           <ChatSidebar
             activeRoom={activeRoom}
             onSelectRoom={(room) => setActiveRoom(room)}
@@ -29,7 +29,7 @@ const Chat = () => {
             onCreateGroup={() => setShowNewGroup(true)}
             onCreateAnnouncement={() => setShowNewAnnouncement(true)}
           />
-          <ChatWindow room={activeRoom} />
+          <ChatWindow room={activeRoom} onBack={() => setActiveRoom(null)} />
         </div>
         <CallModal />
       </CallProvider>

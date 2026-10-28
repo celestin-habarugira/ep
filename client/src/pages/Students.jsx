@@ -71,9 +71,9 @@ const Students = () => {
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Students</h1>
-        <div className="flex gap-4 w-full sm:w-auto">
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search students..." className="input-field flex-1 sm:w-64" />
-          <button onClick={() => { setEditingId(null); setFormData({ firstName: '', lastName: '', studentId: '', grade: '', section: '', dateOfBirth: '', gender: 'male', parentName: '', parentPhone: '', address: '' }); setShowModal(true); }} className="btn-primary whitespace-nowrap">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:gap-4">
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search students..." className="input-field w-full sm:w-64" />
+          <button onClick={() => { setEditingId(null); setFormData({ firstName: '', lastName: '', studentId: '', grade: '', section: '', dateOfBirth: '', gender: 'male', parentName: '', parentPhone: '', address: '' }); setShowModal(true); }} className="btn-primary w-full whitespace-nowrap sm:w-auto">
             + Add Student
           </button>
         </div>
@@ -110,14 +110,14 @@ const Students = () => {
       )}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-screen overflow-y-auto">
+          <div className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-4 sm:p-6">
             <h2 className="text-xl font-semibold mb-4">{editingId ? 'Edit Student' : 'Add Student'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">First Name</label><input type="text" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="input-field" required /></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label><input type="text" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="input-field" required /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label><input type="text" value={formData.studentId} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} className="input-field" required /></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Grade</label><input type="text" value={formData.grade} onChange={(e) => setFormData({ ...formData, grade: e.target.value })} className="input-field" required /></div>
               </div>

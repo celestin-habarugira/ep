@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { attendanceAPI, studentAPI } from '../services/api';
 
+const getLocalDateKey = () => {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
 const Attendance = () => {
   const [students, setStudents] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [records, setRecords] = useState({});
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getLocalDateKey);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -94,9 +99,9 @@ const Attendance = () => {
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Attendance</h1>
-        <div className="flex gap-4 w-full sm:w-auto">
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="input-field" />
-          <button onClick={handleSubmit} className="btn-primary whitespace-nowrap">Save Attendance</button>
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
+          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="input-field w-full sm:w-auto" />
+          <button onClick={handleSubmit} className="btn-primary w-full whitespace-nowrap sm:w-auto">Save Attendance</button>
         </div>
       </div>
       {loading ? <div className="text-center py-8">Loading...</div> : (

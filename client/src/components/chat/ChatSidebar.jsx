@@ -19,6 +19,7 @@ const ChatSidebar = ({ activeRoom, onSelectRoom, onNewDirect, onCreateGroup, onC
   const [missedCalls, setMissedCalls] = useState([]);
   const [showCallHistory, setShowCallHistory] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState('');
   const photoInputRef = useRef(null);
 
   const fetchConversations = useCallback(async () => {
@@ -189,8 +190,20 @@ const ChatSidebar = ({ activeRoom, onSelectRoom, onNewDirect, onCreateGroup, onC
   }, [user]);
 
   const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
+    setPhotoUploadError('');
+    if (!file.type.startsWith('image/')) {
+      setPhotoUploadError('Choose an image file.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setPhotoUploadError('Profile images must be 20 MB or smaller.');
+      input.value = '';
+      return;
+    }
     setUploadingPhoto(true);
     try {
       const formData = new FormData();
@@ -201,9 +214,11 @@ const ChatSidebar = ({ activeRoom, onSelectRoom, onNewDirect, onCreateGroup, onC
         socket.emit('photo_changed', { photo: data.photo });
       }
     } catch (err) {
-      console.error('Failed to upload photo');
+      console.error('Failed to upload photo:', err);
+      setPhotoUploadError(err.response?.data?.error || 'Could not upload the profile image. Please try again.');
     } finally {
       setUploadingPhoto(false);
+      input.value = '';
     }
   };
 
@@ -221,7 +236,7 @@ const ChatSidebar = ({ activeRoom, onSelectRoom, onNewDirect, onCreateGroup, onC
   };
 
   return (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div className={`${activeRoom ? 'hidden md:flex' : 'flex'} w-full flex-col bg-white md:w-80 md:flex-shrink-0 md:border-r md:border-gray-200 h-full`}>
       <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-white">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
@@ -353,6 +368,7 @@ const ChatSidebar = ({ activeRoom, onSelectRoom, onNewDirect, onCreateGroup, onC
           {user?.photo ? 'Change' : 'Add photo'}
         </button>
       </div>
+      {photoUploadError && <p role="alert" className="px-4 py-2 text-xs text-red-600">{photoUploadError}</p>}
 
       <div className="px-4 py-2 border-b border-gray-100">
         <div className="relative">
@@ -517,8 +533,8 @@ const ChatSidebar = ({ activeRoom, onSelectRoom, onNewDirect, onCreateGroup, onC
         )}
 
         {showCallHistory && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCallHistory(false)}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[60vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2" onClick={() => setShowCallHistory(false)}>
+            <div className="flex max-h-[90dvh] w-full max-w-md flex-col rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">Call History</h2>
                 <button onClick={() => setShowCallHistory(false)} className="text-gray-400 hover:text-gray-600 p-1">

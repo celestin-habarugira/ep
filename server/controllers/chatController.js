@@ -43,11 +43,16 @@ const getOrCreateDirectRoom = async (req, res) => {
 const createGroupRoom = async (req, res) => {
   try {
     const { name, participantIds } = req.body;
-    if (!name || !participantIds || participantIds.length < 2) {
-      return res.status(400).json({ message: 'Name and at least 2 participants required' });
+    if (!name?.trim() || !Array.isArray(participantIds)) {
+      return res.status(400).json({ message: 'A group name and at least one other member are required' });
     }
 
-    const allParticipants = [...new Set([...participantIds, req.user._id.toString()])];
+    const creatorId = req.user._id.toString();
+    const otherParticipantIds = [...new Set(participantIds.map(String))].filter((id) => id !== creatorId);
+    if (otherParticipantIds.length < 1) {
+      return res.status(400).json({ message: 'Select at least one member other than yourself' });
+    }
+    const allParticipants = [...otherParticipantIds, creatorId];
 
     const room = await ChatRoom.create({
       name,

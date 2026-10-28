@@ -13,8 +13,8 @@ const MembersList = ({ participants = [], type, onClose }) => {
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 max-h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2" onClick={onClose}>
+      <div className="flex max-h-[90dvh] w-full max-w-sm flex-col rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <h3 className="font-semibold text-gray-900">Members ({participants.length})</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">

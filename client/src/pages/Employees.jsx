@@ -83,9 +83,9 @@ const Employees = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
         <h1 className="text-3xl font-bold text-gray-900">Employees</h1>
-        {isAdmin && <button onClick={() => setShowCreate((open) => !open)} className="btn-primary">+ Add Employee</button>}
+        {isAdmin && <button onClick={() => setShowCreate((open) => !open)} className="btn-primary w-full sm:w-auto">+ Add Employee</button>}
       </div>
 
       {showCreate && isAdmin && (
