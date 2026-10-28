@@ -2,9 +2,19 @@ const Attendance = require('../models/Attendance');
 
 const getAll = async (req, res) => {
   try {
-    const { date, studentId } = req.query;
+    const { date, startDate, endDate, studentId } = req.query;
     const query = {};
-    if (date) query.date = new Date(date);
+    if (date) {
+      query.date = new Date(date);
+    } else if (startDate && endDate) {
+      const start = new Date(`${startDate}T00:00:00.000Z`);
+      const endExclusive = new Date(`${endDate}T00:00:00.000Z`);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(endExclusive.getTime()) || endExclusive < start) {
+        return res.status(400).json({ error: 'Invalid attendance date range' });
+      }
+      endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+      query.date = { $gte: start, $lt: endExclusive };
+    }
     if (studentId) query.student = studentId;
     const attendance = await Attendance.find(query).populate('student', 'firstName lastName studentId grade').sort({ date: -1 });
     res.json(attendance);

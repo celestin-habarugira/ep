@@ -1,11 +1,13 @@
 # EP. Cyumushyika School Management System
 
-EP. Cyumushyika is a responsive school administration dashboard for managing student records, attendance, academic performance, employees, and staff communication. The dashboard summarizes enrollment, daily attendance, attendance follow-up, and academic results. Staff can filter the daily attendance report by date and download it as a CSV file.
+EP. Cyumushyika is a responsive school administration platform for managing student records, attendance, academic performance, employees, and staff communication. Its public landing page introduces the school workspace and links visitors to sign-in and registration. The private administration area uses a responsive sidebar and provides daily, weekly, and monthly attendance reports.
 
 ## Features
 
-- **Dashboard:** enrollment and staff totals, current-year performance averages, attendance completion, absent and late student follow-up, recent results, and section shortcuts.
-- **Daily reports:** choose a school date, review present, absent, late, and excused counts, inspect students needing follow-up, and download a date-stamped CSV report.
+- **Dashboard:** enrollment and staff totals, current-year performance averages, attendance completion, absent and late student follow-up, daily record chart, recent results, and section shortcuts.
+- **Daily, weekly, and monthly reports:** choose a date or month, review real attendance counts and follow-up lists, inspect records by day, and download a date-ranged CSV report or print the page.
+- **Public landing page:** responsive introduction, interactive feature selector, account links, and expandable FAQ.
+- **Workspace sidebar:** persistent collapse option on desktop, mobile navigation drawer, user profile, sign-out, and links to school tools and the public home.
 - **Students:** search, add, edit, and deactivate student records.
 - **Attendance:** record present, absent, late, or excused status for each active student by date.
 - **Performance:** add, edit, and remove subject results, with student, term, year, score, grade, and comments.

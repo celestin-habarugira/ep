@@ -36,7 +36,7 @@ const CallModal = () => {
   const peerPhoto = callPeer?.photo;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70">
       {callError && callState === 'idle' && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl animate-fade-in z-10">
           <p className="text-sm font-medium">{callError}</p>
