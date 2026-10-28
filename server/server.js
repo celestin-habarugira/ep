@@ -18,9 +18,10 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
-const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',')
-  : ['http://localhost:3000', 'http://localhost:5173'];
+const allowedOrigins = [...new Set([
+  'https://epkimushyika.vercel.app',
+  ...(process.env.CORS_ORIGIN || '').split(',').map((origin) => origin.trim()).filter(Boolean),
+])];
 
 const io = new Server(server, {
   cors: {

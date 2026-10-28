@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': 'http://localhost:4000'
+      '/api': 'https://ep-0n86.onrender.com'
     }
   }
 });
