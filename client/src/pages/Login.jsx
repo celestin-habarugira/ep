@@ -28,6 +28,7 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+        <div className="mb-5 flex justify-start"><Link to="/" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-blue-800" aria-label="Return to school home"><span aria-hidden="true">←</span> Home</Link></div>
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-primary-800">EP. Cyumushyika</h1>
           <p className="text-gray-600 mt-2">Management System</p>

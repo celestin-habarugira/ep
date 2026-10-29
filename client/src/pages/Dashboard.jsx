@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { attendanceAPI, employeeAPI, performanceAPI, studentAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -15,6 +15,54 @@ const reportDateLabel = (value) => new Date(`${value}T12:00:00`).toLocaleDateStr
   weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
 });
 
+const pdfText = (value) => String(value ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '?');
+const escapePdfText = (value) => pdfText(value).replace(/([\\()])/g, '\\$1');
+
+const createPdfBlob = (lines) => {
+  const wrap = (line) => {
+    const words = pdfText(line).split(/\s+/);
+    const output = [];
+    let current = '';
+    words.forEach((word) => {
+      if (current && `${current} ${word}`.length > 92) { output.push(current); current = word; }
+      else current = current ? `${current} ${word}` : word;
+    });
+    output.push(current);
+    return output;
+  };
+  const title = pdfText(lines[0] || 'Attendance report');
+  const body = lines.slice(1).flatMap(wrap);
+  const pages = [];
+  for (let index = 0; index < body.length; index += 48) pages.push(body.slice(index, index + 48));
+  if (!pages.length) pages.push([]);
+
+  const fontId = 3 + pages.length * 2;
+  const objects = [];
+  objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+  objects[2] = `<< /Type /Pages /Kids [${pages.map((_, index) => `${3 + index * 2} 0 R`).join(' ')}] /Count ${pages.length} >>`;
+  pages.forEach((pageLines, index) => {
+    const pageId = 3 + index * 2;
+    const contentId = pageId + 1;
+    const bodyContent = pageLines.map((line, lineIndex) => `${lineIndex ? '0 -14 Td ' : ''}(${escapePdfText(line)}) Tj`).join('\n');
+    const stream = `BT\n/F1 14 Tf\n48 752 Td\n(${escapePdfText(title)}${index ? ' (continued)' : ''}) Tj\n/F1 9 Tf\n0 -26 Td\n${bodyContent}\nET`;
+    objects[pageId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentId} 0 R >>`;
+    objects[contentId] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+  });
+  objects[fontId] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+
+  let document = '%PDF-1.4\n';
+  const offsets = [0];
+  for (let id = 1; id < objects.length; id += 1) {
+    offsets[id] = document.length;
+    document += `${id} 0 obj\n${objects[id]}\nendobj\n`;
+  }
+  const xrefOffset = document.length;
+  document += `xref\n0 ${objects.length}\n0000000000 65535 f \n`;
+  for (let id = 1; id < objects.length; id += 1) document += `${String(offsets[id]).padStart(10, '0')} 00000 n \n`;
+  document += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return new Blob([document], { type: 'application/pdf' });
+};
+
 const statusStyles = {
   present: 'bg-emerald-500',
   absent: 'bg-rose-500',
@@ -25,6 +73,7 @@ const statusStyles = {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const notify = useToast();
   const [reportDate, setReportDate] = useState(localDateKey(new Date()));
   const [reportPeriod, setReportPeriod] = useState('daily');
@@ -80,6 +129,11 @@ const Dashboard = () => {
   }, [notify, reportRange.endDate, reportRange.startDate]);
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
+  useEffect(() => {
+    if (location.hash === '#attendance-report') {
+      window.requestAnimationFrame(() => document.getElementById('attendance-report')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+  }, [location.hash]);
 
   const counts = useMemo(() => {
     const result = { present: 0, absent: 0, late: 0, excused: 0 };
@@ -145,6 +199,36 @@ const Dashboard = () => {
     notify({ type: 'success', title: 'Report downloaded', message: `${periodTitle} attendance report saved as CSV.` });
   };
 
+  const downloadPdfReport = () => {
+    try {
+      const pdfLines = [
+        `EP. Cyumushyika ${periodTitle} Attendance Report`,
+        `Reporting dates: ${reportRange.startDate} to ${reportRange.endDate}`,
+        `Students enrolled: ${students.length}`,
+        `Attendance records: ${counts.marked}`,
+        `Completion: ${counts.completion}% | Not marked: ${counts.unmarked}`,
+        `Present: ${counts.present} | Absent: ${counts.absent} | Late: ${counts.late} | Excused: ${counts.excused}`,
+        '',
+        'Attendance by day',
+        ...reportRange.days.flatMap((day) => {
+          const dayRecords = attendance.filter((record) => localDateKey(new Date(record.date)) === day);
+          if (!dayRecords.length) return [`${day}: no records marked`];
+          return [`${day}: ${dayRecords.length} records`, ...dayRecords.map(({ student, status }) => `  ${student ? `${student.firstName} ${student.lastName} (${student.studentId || 'no ID'})` : 'Student'} - ${status}`)];
+        }),
+      ];
+      const blobUrl = URL.createObjectURL(createPdfBlob(pdfLines));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `ep-cyumushyika-${reportPeriod}-attendance-${reportRange.startDate}-to-${reportRange.endDate}.pdf`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      notify({ type: 'success', title: 'PDF downloaded', message: `${periodTitle} attendance report saved as PDF.` });
+    } catch (error) {
+      console.error('Could not generate attendance PDF:', error);
+      notify({ type: 'error', title: 'Could not create PDF', message: 'Please try downloading the report again.' });
+    }
+  };
+
   const reportStatuses = [
     ['Present', counts.present, 'present'],
     ['Absent', counts.absent, 'absent'],
@@ -180,7 +264,7 @@ const Dashboard = () => {
         <div className="flex flex-wrap gap-2 print:hidden">
           <button type="button" onClick={() => loadDashboard(true)} disabled={refreshing} className="rounded-lg border border-white/25 px-4 py-2.5 text-sm font-semibold hover:bg-white/10 disabled:opacity-60">{refreshing ? 'Refreshing…' : 'Refresh'}</button>
           <button type="button" onClick={() => window.print()} className="rounded-lg border border-white/25 px-4 py-2.5 text-sm font-semibold hover:bg-white/10">Print report</button>
-          <button type="button" onClick={downloadReport} className="rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100">Download {periodTitle.toLowerCase()} report</button>
+          <button type="button" onClick={downloadReport} className="rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100">Download CSV</button>
         </div>
       </header>
 
@@ -196,7 +280,7 @@ const Dashboard = () => {
         ))}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-labelledby="daily-report-title">
+      <section id="attendance-report" className="scroll-mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-labelledby="daily-report-title">
         <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700">Attendance reports</p>
@@ -210,6 +294,7 @@ const Dashboard = () => {
             <label className="w-full text-sm font-medium text-slate-700 sm:w-auto">{reportPeriod === 'monthly' ? 'Month' : 'Reference date'}
               <input type={reportPeriod === 'monthly' ? 'month' : 'date'} value={reportPeriod === 'monthly' ? reportDate.slice(0, 7) : reportDate} onChange={(event) => event.target.value && setReportDate(reportPeriod === 'monthly' ? `${event.target.value}-01` : event.target.value)} className="input-field mt-1 min-w-0 sm:w-52" />
             </label>
+            <button type="button" onClick={downloadPdfReport} className="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800">Download PDF</button>
           </div>
         </div>
 

@@ -4,10 +4,12 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+h1, h2, h3, h4 { font-family: 'Manrope', 'DM Sans', 'Segoe UI', sans-serif; letter-spacing: -0.025em; }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
@@ -41,6 +43,9 @@ code {
   body { background: #fff !important; }
   nav, button, input, select, textarea { display: none !important; }
   main { max-width: none !important; padding: 0 !important; }
+  .dashboard-app { display: block !important; height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  .dashboard-sidebar { display: none !important; }
+  .dashboard-scroll-area { height: auto !important; min-height: 0 !important; overflow: visible !important; }
   .card, section { break-inside: avoid; box-shadow: none !important; }
 }
 
