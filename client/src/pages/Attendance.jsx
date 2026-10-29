@@ -3,6 +3,7 @@ import { attendanceAPI, studentAPI } from '../services/api';
 import Pagination, { usePagination } from '../components/shared/Pagination';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
+import { SortHeader, useSortableData } from '../components/shared/useSortableData';
 
 const getLocalDateKey = () => {
   const date = new Date();
@@ -17,10 +18,16 @@ const Attendance = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const notify = useToast();
   const confirm = useConfirm();
-  const filteredStudents = students.filter((student) => `${student.firstName} ${student.lastName} ${student.studentId} ${student.grade}`.toLowerCase().includes(search.toLowerCase()));
-  const pagination = usePagination(filteredStudents);
+  const filteredStudents = students.filter((student) => {
+    const matchesSearch = `${student.firstName} ${student.lastName} ${student.studentId} ${student.grade}`.toLowerCase().includes(search.toLowerCase());
+    const status = records[student._id] || 'unmarked';
+    return matchesSearch && (statusFilter === 'all' || status === statusFilter);
+  });
+  const sortable = useSortableData(filteredStudents);
+  const pagination = usePagination(sortable.items);
 
   useEffect(() => {
     setLoading(true);
@@ -33,13 +40,9 @@ const Attendance = () => {
     try {
       const { data } = await studentAPI.getAll();
       setStudents(data);
-      const initialRecords = {};
-      data.forEach((s) => {
-        initialRecords[s._id] = 'present';
-      });
-      setRecords((current) => ({ ...initialRecords, ...current }));
     } catch (error) {
       console.error('Failed to fetch students:', error);
+      notify({ type: 'error', title: 'Could not load students', message: error.response?.data?.error || 'Please refresh and try again.' });
     }
   };
 
@@ -54,6 +57,7 @@ const Attendance = () => {
       setRecords((prev) => ({ ...prev, ...recordMap }));
     } catch (error) {
       console.error('Failed to fetch attendance:', error);
+      notify({ type: 'error', title: 'Could not load attendance', message: error.response?.data?.error || 'Please try another date or refresh.' });
     } finally {
       setLoading(false);
     }
@@ -65,19 +69,25 @@ const Attendance = () => {
 
   const handleSubmit = async () => {
     if (saving) return;
+    const markedEntries = Object.entries(records).filter(([, status]) => ['present', 'absent', 'late', 'excused'].includes(status));
+    if (!markedEntries.length) {
+      notify({ type: 'info', title: 'No attendance marked', message: 'Choose a status for at least one student before saving.' });
+      return;
+    }
     setSaving(true);
     try {
       const existingByStudent = new Map(attendance.map((record) => [record.student._id, record]));
-      await Promise.all(Object.entries(records).map(([studentId, status]) => {
+      await Promise.all(markedEntries.map(([studentId, status]) => {
         const data = { student: studentId, date: selectedDate, status };
         const existing = existingByStudent.get(studentId);
         return existing ? attendanceAPI.update(existing._id, data) : attendanceAPI.create(data);
       }));
-      notify({ type: 'success', title: 'Attendance saved', message: `${Object.keys(records).length} student records saved for ${selectedDate}.` });
+      notify({ type: 'success', title: 'Attendance saved', message: `${markedEntries.length} student records saved for ${selectedDate}.` });
       fetchAttendance();
     } catch (error) {
       console.error('Failed to save attendance:', error);
       notify({ type: 'error', title: 'Could not save attendance', message: error.response?.data?.error || 'Please try again.' });
+      fetchAttendance();
     } finally { setSaving(false); }
   };
 
@@ -113,6 +123,7 @@ const Attendance = () => {
         <h1 className="text-3xl font-bold text-gray-900">Attendance</h1>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
           <input type="search" aria-label="Search attendance students" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search students..." className="input-field w-full sm:w-56" />
+          <select aria-label="Filter students by attendance status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="input-field w-full sm:w-auto"><option value="all">All statuses</option><option value="unmarked">Not marked</option><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select>
           <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="input-field w-full sm:w-auto" />
           <button onClick={handleSubmit} disabled={saving || loading} className="btn-primary w-full whitespace-nowrap sm:w-auto disabled:cursor-wait disabled:opacity-60">{saving ? 'Saving…' : 'Save Attendance'}</button>
         </div>
@@ -122,9 +133,9 @@ const Attendance = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Student ID</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Grade</th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Student ID" value="studentId" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Name" value="name" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Grade" value="grade" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
               </tr>
@@ -141,6 +152,7 @@ const Attendance = () => {
                         <button
                           key={status}
                           onClick={() => handleStatusChange(s._id, status)}
+                          aria-pressed={records[s._id] === status}
                           className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-colors ${
                             records[s._id] === status ? getStatusColor(status) : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                           }`}
@@ -157,7 +169,7 @@ const Attendance = () => {
                   </td>
                 </tr>
               ))}
-              {filteredStudents.length === 0 && <tr><td colSpan="5" className="px-4 py-3 text-center text-gray-500">{students.length === 0 ? 'No students found. Add students first.' : 'No students match your search.'}</td></tr>}
+              {pagination.items.length === 0 && <tr><td colSpan="5" className="px-4 py-3 text-center text-gray-500">{students.length === 0 ? 'No students found. Add students first.' : 'No students match the current search and status filters.'}</td></tr>}
             </tbody>
           </table>
           <Pagination {...pagination} total={filteredStudents.length} />

@@ -3,6 +3,7 @@ import { performanceAPI, studentAPI } from '../services/api';
 import Pagination, { usePagination } from '../components/shared/Pagination';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
+import { SortHeader, useSortableData } from '../components/shared/useSortableData';
 
 const Performance = () => {
   const [students, setStudents] = useState([]);
@@ -12,11 +13,14 @@ const Performance = () => {
   const [editingId, setEditingId] = useState(null);
   const [saveError, setSaveError] = useState('');
   const [search, setSearch] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('all');
   const [formData, setFormData] = useState({ student: '', subject: '', score: '', grade: '', term: '', year: new Date().getFullYear(), comments: '' });
   const notify = useToast();
   const confirm = useConfirm();
-  const filteredPerformances = performances.filter((record) => `${record.student?.firstName || ''} ${record.student?.lastName || ''} ${record.subject || ''} ${record.term || ''} ${record.year || ''}`.toLowerCase().includes(search.toLowerCase()));
-  const pagination = usePagination(filteredPerformances);
+  const filteredPerformances = performances.filter((record) => (subjectFilter === 'all' || record.subject === subjectFilter) && `${record.student?.firstName || ''} ${record.student?.lastName || ''} ${record.subject || ''} ${record.term || ''} ${record.year || ''}`.toLowerCase().includes(search.toLowerCase()));
+  const sortable = useSortableData(filteredPerformances);
+  const pagination = usePagination(sortable.items);
+  const subjects = [...new Set(performances.map((record) => record.subject).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
   useEffect(() => {
     fetchStudents();
@@ -106,7 +110,7 @@ const Performance = () => {
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Performance</h1>
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row"><input type="search" aria-label="Search performance records" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search records..." className="input-field sm:w-56" /><button onClick={() => { setEditingId(null); setFormData({ student: '', subject: '', score: '', grade: '', term: '', year: new Date().getFullYear(), comments: '' }); setShowModal(true); }} className="btn-primary whitespace-nowrap">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row"><input type="search" aria-label="Search performance records" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search records..." className="input-field sm:w-56" /><select aria-label="Filter performance by subject" value={subjectFilter} onChange={(event) => setSubjectFilter(event.target.value)} className="input-field sm:w-44"><option value="all">All subjects</option>{subjects.map((subject) => <option key={subject} value={subject}>{subject}</option>)}</select><button onClick={() => { setEditingId(null); setFormData({ student: '', subject: '', score: '', grade: '', term: '', year: new Date().getFullYear(), comments: '' }); setShowModal(true); }} className="btn-primary whitespace-nowrap">
           + Add Record
         </button></div>
       </div>
@@ -115,9 +119,9 @@ const Performance = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Student</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Subject</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Score</th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Student" value="studentName" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Subject" value="subject" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Score" value="score" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Grade</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Term</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Year</th>

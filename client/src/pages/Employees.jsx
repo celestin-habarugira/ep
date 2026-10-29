@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Pagination, { usePagination } from '../components/shared/Pagination';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
+import { SortHeader, useSortableData } from '../components/shared/useSortableData';
 
 const Employees = () => {
   const { user } = useAuth();
@@ -18,7 +19,8 @@ const Employees = () => {
   const notify = useToast();
   const confirm = useConfirm();
   const filteredEmployees = employees.filter((employee) => `${employee.firstName} ${employee.lastName} ${employee.email} ${employee.role} ${employee.department || ''}`.toLowerCase().includes(search.toLowerCase()));
-  const pagination = usePagination(filteredEmployees);
+  const sortable = useSortableData(filteredEmployees);
+  const pagination = usePagination(sortable.items);
 
   useEffect(() => {
     fetchEmployees();
@@ -128,12 +130,13 @@ const Employees = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Role</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Department</th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Name" value="name" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Email" value="email" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Role" value="role" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Department" value="department" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Phone</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Hire Date</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                 {isAdmin && <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>}
               </tr>
             </thead>
@@ -165,6 +168,7 @@ const Employees = () => {
                         <input name="phone" value={editData.phone} onChange={handleEditChange} className="w-full px-2 py-1 border rounded text-sm" />
                       </td>
                       <td className="px-4 py-3 text-sm">{new Date(e.hireDate).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-sm"><span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">{e.isActive === false ? 'Inactive' : 'Active'}</span></td>
                       <td className="px-4 py-3 text-sm">
                         <div className="flex gap-2">
                           <button onClick={() => saveEdit(e._id)} className="text-green-600 hover:text-green-800 text-xs font-medium">Save</button>
@@ -187,6 +191,7 @@ const Employees = () => {
                       <td className="px-4 py-3 text-sm">{e.department || '-'}</td>
                       <td className="px-4 py-3 text-sm">{e.phone || '-'}</td>
                       <td className="px-4 py-3 text-sm">{new Date(e.hireDate).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-sm"><span className={e.isActive === false ? 'rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600' : 'rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700'}>{e.isActive === false ? 'Inactive' : 'Active'}</span></td>
                       {isAdmin && (
                         <td className="px-4 py-3 text-sm">
                           <div className="flex gap-2">
@@ -199,7 +204,7 @@ const Employees = () => {
                   )}
                 </tr>
               ))}
-              {employees.length === 0 && <tr><td colSpan={isAdmin ? 7 : 6} className="px-4 py-3 text-center text-gray-500">No employees found</td></tr>}
+              {filteredEmployees.length === 0 && <tr><td colSpan={isAdmin ? 8 : 7} className="px-4 py-3 text-center text-gray-500">{employees.length === 0 ? 'No employees found' : 'No employees match your search.'}</td></tr>}
             </tbody>
           </table>
           {filteredEmployees.length === 0 && <p className="p-6 text-center text-sm text-slate-500">No employees match “{search}”.</p>}

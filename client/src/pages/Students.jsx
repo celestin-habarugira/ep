@@ -3,6 +3,7 @@ import { studentAPI } from '../services/api';
 import Pagination, { usePagination } from '../components/shared/Pagination';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
+import { SortHeader, useSortableData } from '../components/shared/useSortableData';
 
 const Students = () => {
   const [students, setStudents] = useState([]);
@@ -10,10 +11,14 @@ const Students = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('all');
   const [formData, setFormData] = useState({ firstName: '', lastName: '', studentId: '', grade: '', section: '', dateOfBirth: '', gender: 'male', parentName: '', parentPhone: '', address: '' });
   const notify = useToast();
   const confirm = useConfirm();
-  const pagination = usePagination(students);
+  const filteredStudents = students.filter((student) => gradeFilter === 'all' || student.grade === gradeFilter);
+  const sortable = useSortableData(filteredStudents);
+  const pagination = usePagination(sortable.items);
+  const grades = [...new Set(students.map((student) => student.grade).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
 
   useEffect(() => { fetchStudents(); }, [search]);
 
@@ -84,7 +89,8 @@ const Students = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Students</h1>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:gap-4">
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search students..." className="input-field w-full sm:w-64" />
+          <input type="search" aria-label="Search students" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search students..." className="input-field w-full sm:w-64" />
+          <select aria-label="Filter by grade" value={gradeFilter} onChange={(event) => setGradeFilter(event.target.value)} className="input-field w-full sm:w-36"><option value="all">All grades</option>{grades.map((grade) => <option key={grade} value={grade}>{grade}</option>)}</select>
           <button onClick={() => { setEditingId(null); setFormData({ firstName: '', lastName: '', studentId: '', grade: '', section: '', dateOfBirth: '', gender: 'male', parentName: '', parentPhone: '', address: '' }); setShowModal(true); }} className="btn-primary w-full whitespace-nowrap sm:w-auto">
             + Add Student
           </button>
@@ -95,10 +101,10 @@ const Students = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Student ID</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Grade</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Parent</th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Student ID" value="studentId" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Name" value="name" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Grade" value="grade" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
+                <th className="px-4 py-3 text-left text-sm"><SortHeader label="Parent" value="parentName" sort={sortable.sort} sortBy={sortable.sortBy} /></th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
               </tr>
             </thead>
@@ -115,10 +121,10 @@ const Students = () => {
                   </td>
                 </tr>
               ))}
-              {students.length === 0 && <tr><td colSpan="5" className="px-4 py-3 text-center text-gray-500">No students found</td></tr>}
+              {pagination.items.length === 0 && <tr><td colSpan="5" className="px-4 py-3 text-center text-gray-500">{students.length === 0 ? 'No students found' : 'No students match the selected grade.'}</td></tr>}
             </tbody>
           </table>
-          <Pagination {...pagination} total={students.length} />
+          <Pagination {...pagination} total={filteredStudents.length} />
         </div>
       )}
       {showModal && (

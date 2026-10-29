@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,7 +16,8 @@ const Login = () => {
     setLoading(true);
     try {
       await login(formData.email, formData.password);
-      navigate('/dashboard');
+      const destination = location.state?.from;
+      navigate(destination ? `${destination.pathname}${destination.search || ''}${destination.hash || ''}` : '/dashboard', { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');
     } finally {
@@ -43,7 +45,7 @@ const Login = () => {
           <button type="submit" className="w-full btn-primary" disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
-          Don&apos;t have an account? <a href="/register" className="text-primary-600 hover:text-primary-700">Register</a>
+          Don&apos;t have an account? <Link to="/register" className="text-primary-600 hover:text-primary-700">Register</Link>
         </p>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import DashboardShell from './components/layout/DashboardShell';
 import Landing from './pages/Landing';
@@ -16,8 +16,9 @@ import { ConfirmProvider } from './context/ConfirmContext';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  return user ? children : <Navigate to="/login" />;
+  return user ? children : <Navigate to="/login" replace state={{ from: location }} />;
 };
 
 function App() {
