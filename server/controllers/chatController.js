@@ -321,7 +321,16 @@ const uploadFile = async (req, res) => {
 
     res.status(201).json(populated);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Chat file upload failed:', error.code || 'UPLOAD_ERROR', error.message);
+    const cloudinaryUnavailable = error.code === 'CLOUDINARY_NOT_CONFIGURED';
+    const cloudinaryFailed = error.code === 'CLOUDINARY_UPSTREAM';
+    const status = cloudinaryUnavailable ? 503 : cloudinaryFailed ? 502 : 500;
+    const message = cloudinaryUnavailable
+      ? 'Image uploads are not configured on the server. Please contact the school administrator.'
+      : cloudinaryFailed
+        ? 'Image storage is temporarily unavailable. Please try again shortly.'
+        : 'The file could not be uploaded. Please try again.';
+    res.status(status).json({ message });
     if (uploadedImage?.public_id) deleteImage(uploadedImage.public_id).catch(() => {});
   } finally {
     if (temporaryFile && !keepLocalFile) await fs.promises.unlink(temporaryFile).catch(() => {});

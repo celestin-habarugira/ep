@@ -30,7 +30,7 @@ router.post('/direct', getOrCreateDirectRoom);
 router.post('/group', createGroupRoom);
 router.post('/announcement', createAnnouncementRoom);
 router.post('/messages', sendMessage);
-router.post('/upload', upload.single('file'), uploadFile);
+router.post('/upload', upload.singleHandled('file'), uploadFile);
 router.put('/read/:roomId', markAsRead);
 router.post('/react/:messageId', reactToMessage);
 router.put('/edit/:messageId', editMessage);

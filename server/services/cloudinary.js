@@ -4,13 +4,39 @@ const fs = require('fs/promises');
 const path = require('path');
 
 const credentials = () => {
-  if (!process.env.CLOUDINARY_URL) throw new Error('CLOUDINARY_URL is not configured');
-  const cloudinaryUrl = new URL(process.env.CLOUDINARY_URL);
-  if (cloudinaryUrl.protocol !== 'cloudinary:') throw new Error('CLOUDINARY_URL must use the cloudinary scheme');
+  if (!process.env.CLOUDINARY_URL) {
+    const error = new Error('CLOUDINARY_URL is not configured');
+    error.code = 'CLOUDINARY_NOT_CONFIGURED';
+    throw error;
+  }
+  let cloudinaryUrl;
+  try { cloudinaryUrl = new URL(process.env.CLOUDINARY_URL); }
+  catch {
+    const error = new Error('CLOUDINARY_URL is invalid');
+    error.code = 'CLOUDINARY_NOT_CONFIGURED';
+    throw error;
+  }
+  if (cloudinaryUrl.protocol !== 'cloudinary:') {
+    const error = new Error('CLOUDINARY_URL must use the cloudinary scheme');
+    error.code = 'CLOUDINARY_NOT_CONFIGURED';
+    throw error;
+  }
   const cloudName = cloudinaryUrl.hostname;
-  const apiKey = decodeURIComponent(cloudinaryUrl.username);
-  const apiSecret = decodeURIComponent(cloudinaryUrl.password);
-  if (!cloudName || !apiKey || !apiSecret) throw new Error('CLOUDINARY_URL credentials are incomplete');
+  let apiKey;
+  let apiSecret;
+  try {
+    apiKey = decodeURIComponent(cloudinaryUrl.username);
+    apiSecret = decodeURIComponent(cloudinaryUrl.password);
+  } catch {
+    const error = new Error('CLOUDINARY_URL credentials are invalid');
+    error.code = 'CLOUDINARY_NOT_CONFIGURED';
+    throw error;
+  }
+  if (!cloudName || !apiKey || !apiSecret) {
+    const error = new Error('CLOUDINARY_URL credentials are incomplete');
+    error.code = 'CLOUDINARY_NOT_CONFIGURED';
+    throw error;
+  }
   return { cloudName, apiKey, apiSecret };
 };
 
@@ -64,13 +90,18 @@ const uploadImage = async (filePath, folder, mimeType = 'application/octet-strea
   const timestamp = Math.floor(Date.now() / 1000);
   const params = { folder, timestamp };
   const file = await fs.readFile(filePath);
-  return postForm(
-    `/v1_1/${encodeURIComponent(cloudName)}/image/upload`,
-    { ...params, api_key: apiKey, signature: sign(params, apiSecret) },
-    file,
-    path.basename(filePath),
-    mimeType
-  );
+  try {
+    return await postForm(
+      `/v1_1/${encodeURIComponent(cloudName)}/image/upload`,
+      { ...params, api_key: apiKey, signature: sign(params, apiSecret) },
+      file,
+      path.basename(filePath),
+      mimeType
+    );
+  } catch (error) {
+    error.code = 'CLOUDINARY_UPSTREAM';
+    throw error;
+  }
 };
 
 const deleteImage = async (publicId) => {

@@ -12,6 +12,6 @@ router.post('/', protect, admin, create);
 router.get('/:id', protect, getById);
 router.put('/:id', protect, admin, update);
 router.delete('/:id', protect, admin, remove);
-router.post('/upload-photo', protect, upload.single('photo'), uploadPhoto);
+router.post('/upload-photo', protect, upload.singleHandled('photo'), uploadPhoto);
 
 module.exports = router;

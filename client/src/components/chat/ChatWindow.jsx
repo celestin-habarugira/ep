@@ -337,8 +337,8 @@ const ChatWindow = ({ room, onBack }) => {
       });
       scrollToBottom();
       setPreviewFile(null);
-    } catch {
-      setError('Failed to upload file');
+    } catch (error) {
+      setError(error.response?.data?.message || error.response?.data?.error || 'Failed to upload file. Please try again.');
       setTimeout(() => setError(null), 3000);
     } finally { setUploadProgress(null); }
   }, [previewFile, room?._id, scrollToBottom]);
