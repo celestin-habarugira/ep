@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 480" role="img" aria-labelledby="title desc">
+  <title id="title">Students reading in class</title>
+  <desc id="desc">Two learners share a book beside a classroom bookshelf.</desc>
+  <rect width="720" height="480" rx="28" fill="#eaf2ff"/>
+  <rect x="56" y="54" width="608" height="300" rx="16" fill="#fff" stroke="#c8d7ed" stroke-width="7"/>
+  <rect x="90" y="84" width="540" height="220" rx="10" fill="#173c77"/>
+  <path d="M120 145h95m-95 40h150m-150 40h120" stroke="#dcecff" stroke-width="8" stroke-linecap="round"/>
+  <rect x="445" y="112" width="145" height="152" rx="10" fill="#dcecff"/>
+  <path d="M470 135v105m40-105v105m40-105v105m-80-78h100m-100 42h100" stroke="#7d9ac0" stroke-width="7"/>
+  <circle cx="280" cy="330" r="39" fill="#8b543d"/>
+  <path d="M232 421c0-55 21-74 48-74s48 19 48 74v30H232z" fill="#3b82f6"/>
+  <path d="M244 327c4-26 17-45 38-45 22 0 35 17 39 45-24 5-50 6-77 0z" fill="#202b3f"/>
+  <circle cx="440" cy="330" r="39" fill="#d59b76"/>
+  <path d="M392 421c0-55 21-74 48-74s48 19 48 74v30h-96z" fill="#f2ad45"/>
+  <path d="M400 328c5-29 19-45 41-45 22 0 35 17 39 45-24 6-53 6-80 0z" fill="#313342"/>
+  <path d="M282 385q78-58 155 0l-10 49H294z" fill="#fff0cf" stroke="#c98f39" stroke-width="6"/>
+  <path d="M360 378v49" stroke="#c98f39" stroke-width="5"/>
+  <path d="M0 451h720" stroke="#b5c8e1" stroke-width="15"/>
+</svg>

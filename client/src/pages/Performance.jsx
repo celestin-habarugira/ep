@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { performanceAPI, studentAPI } from '../services/api';
+import Pagination, { usePagination } from '../components/shared/Pagination';
+import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 const Performance = () => {
   const [students, setStudents] = useState([]);
@@ -8,7 +11,12 @@ const Performance = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [saveError, setSaveError] = useState('');
+  const [search, setSearch] = useState('');
   const [formData, setFormData] = useState({ student: '', subject: '', score: '', grade: '', term: '', year: new Date().getFullYear(), comments: '' });
+  const notify = useToast();
+  const confirm = useConfirm();
+  const filteredPerformances = performances.filter((record) => `${record.student?.firstName || ''} ${record.student?.lastName || ''} ${record.subject || ''} ${record.term || ''} ${record.year || ''}`.toLowerCase().includes(search.toLowerCase()));
+  const pagination = usePagination(filteredPerformances);
 
   useEffect(() => {
     fetchStudents();
@@ -52,9 +60,11 @@ const Performance = () => {
       setEditingId(null);
       setFormData({ student: '', subject: '', score: '', grade: '', term: '', year: new Date().getFullYear(), comments: '' });
       fetchPerformances();
+      notify({ type: 'success', title: editingId ? 'Performance updated' : 'Performance saved', message: 'The academic record has been saved.' });
     } catch (error) {
       console.error('Failed to save performance:', error);
       setSaveError(error.response?.data?.error || 'Could not save the performance record. Please check the details and try again.');
+      notify({ type: 'error', title: 'Could not save performance', message: error.response?.data?.error || 'Please check the details and try again.' });
     }
   };
 
@@ -73,12 +83,15 @@ const Performance = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this record?')) {
+    const record = performances.find((item) => item._id === id);
+    if (await confirm({ title: 'Delete performance record?', message: `Remove the ${record?.subject || 'academic'} record for ${record?.student?.firstName || 'this student'} ${record?.student?.lastName || ''}?`, confirmLabel: 'Delete record' })) {
       try {
         await performanceAPI.remove(id);
         fetchPerformances();
+        notify({ type: 'success', title: 'Record deleted', message: 'The performance record was removed.' });
       } catch (error) {
         console.error('Failed to delete record:', error);
+        notify({ type: 'error', title: 'Could not delete record', message: error.response?.data?.error || 'Please try again.' });
       }
     }
   };
@@ -93,9 +106,9 @@ const Performance = () => {
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Performance</h1>
-        <button onClick={() => { setEditingId(null); setFormData({ student: '', subject: '', score: '', grade: '', term: '', year: new Date().getFullYear(), comments: '' }); setShowModal(true); }} className="btn-primary whitespace-nowrap">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row"><input type="search" aria-label="Search performance records" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search records..." className="input-field sm:w-56" /><button onClick={() => { setEditingId(null); setFormData({ student: '', subject: '', score: '', grade: '', term: '', year: new Date().getFullYear(), comments: '' }); setShowModal(true); }} className="btn-primary whitespace-nowrap">
           + Add Record
-        </button>
+        </button></div>
       </div>
       {loading ? <div className="text-center py-8">Loading...</div> : (
         <div className="card overflow-x-auto">
@@ -112,7 +125,7 @@ const Performance = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {performances.map((p) => (
+              {pagination.items.map((p) => (
                 <tr key={p._id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm">{p.student?.firstName} {p.student?.lastName}</td>
                   <td className="px-4 py-3 text-sm">{p.subject}</td>
@@ -126,9 +139,10 @@ const Performance = () => {
                   </td>
                 </tr>
               ))}
-              {performances.length === 0 && <tr><td colSpan="7" className="px-4 py-3 text-center text-gray-500">No performance records found</td></tr>}
+              {filteredPerformances.length === 0 && <tr><td colSpan="7" className="px-4 py-3 text-center text-gray-500">{performances.length === 0 ? 'No performance records found' : 'No records match your search.'}</td></tr>}
             </tbody>
           </table>
+          <Pagination {...pagination} total={filteredPerformances.length} />
         </div>
       )}
       {showModal && (

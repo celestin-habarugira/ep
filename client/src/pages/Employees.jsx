@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { employeeAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import Pagination, { usePagination } from '../components/shared/Pagination';
+import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 const Employees = () => {
   const { user } = useAuth();
@@ -11,6 +14,11 @@ const Employees = () => {
   const [message, setMessage] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [createData, setCreateData] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'teacher', department: '', phone: '' });
+  const [search, setSearch] = useState('');
+  const notify = useToast();
+  const confirm = useConfirm();
+  const filteredEmployees = employees.filter((employee) => `${employee.firstName} ${employee.lastName} ${employee.email} ${employee.role} ${employee.department || ''}`.toLowerCase().includes(search.toLowerCase()));
+  const pagination = usePagination(filteredEmployees);
 
   useEffect(() => {
     fetchEmployees();
@@ -22,6 +30,7 @@ const Employees = () => {
       setEmployees(data);
     } catch (error) {
       console.error('Failed to fetch employees:', error);
+      notify({ type: 'error', title: 'Could not load employees', message: error.response?.data?.error || 'Please refresh and try again.' });
     } finally {
       setLoading(false);
     }
@@ -45,22 +54,27 @@ const Employees = () => {
     try {
       await employeeAPI.update(id, editData);
       setMessage({ type: 'success', text: 'Employee updated' });
+      notify({ type: 'success', title: 'Employee updated', message: 'Changes were saved successfully.' });
       setEditingId(null);
       fetchEmployees();
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to update' });
+      notify({ type: 'error', title: 'Could not update employee', message: err.response?.data?.error || 'Please try again.' });
     }
     setTimeout(() => setMessage(null), 3000);
   };
 
   const handleDeactivate = async (id) => {
-    if (!window.confirm('Deactivate this employee?')) return;
+    const employee = employees.find((person) => person._id === id);
+    if (!await confirm({ title: 'Deactivate employee?', message: `Deactivate ${employee?.firstName || 'this employee'} ${employee?.lastName || ''}? They will no longer be active in the staff directory.`, confirmLabel: 'Deactivate' })) return;
     try {
       await employeeAPI.remove(id);
       setMessage({ type: 'success', text: 'Employee deactivated' });
+      notify({ type: 'success', title: 'Employee deactivated', message: 'The staff account has been deactivated.' });
       fetchEmployees();
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to deactivate' });
+      notify({ type: 'error', title: 'Could not deactivate employee', message: err.response?.data?.error || 'Please try again.' });
     }
     setTimeout(() => setMessage(null), 3000);
   };
@@ -72,9 +86,11 @@ const Employees = () => {
       setCreateData({ firstName: '', lastName: '', email: '', password: '', role: 'teacher', department: '', phone: '' });
       setShowCreate(false);
       setMessage({ type: 'success', text: 'Employee created' });
+      notify({ type: 'success', title: 'Employee created', message: 'The staff account is ready.' });
       fetchEmployees();
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to create employee' });
+      notify({ type: 'error', title: 'Could not create employee', message: err.response?.data?.error || 'Please check the form and try again.' });
     }
     setTimeout(() => setMessage(null), 3000);
   };
@@ -85,7 +101,7 @@ const Employees = () => {
     <div>
       <div className="mb-6 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
         <h1 className="text-3xl font-bold text-gray-900">Employees</h1>
-        {isAdmin && <button onClick={() => setShowCreate((open) => !open)} className="btn-primary w-full sm:w-auto">+ Add Employee</button>}
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row"><input aria-label="Search employees" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search employees..." className="input-field sm:w-64" />{isAdmin && <button onClick={() => setShowCreate((open) => !open)} className="btn-primary w-full sm:w-auto">+ Add Employee</button>}</div>
       </div>
 
       {showCreate && isAdmin && (
@@ -122,7 +138,7 @@ const Employees = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {employees.map((e) => (
+              {pagination.items.map((e) => (
                 <tr key={e._id} className="hover:bg-gray-50">
                   {editingId === e._id ? (
                     <>
@@ -186,6 +202,8 @@ const Employees = () => {
               {employees.length === 0 && <tr><td colSpan={isAdmin ? 7 : 6} className="px-4 py-3 text-center text-gray-500">No employees found</td></tr>}
             </tbody>
           </table>
+          {filteredEmployees.length === 0 && <p className="p-6 text-center text-sm text-slate-500">No employees match “{search}”.</p>}
+          <Pagination {...pagination} total={filteredEmployees.length} />
         </div>
       )}
     </div>

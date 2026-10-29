@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { studentAPI } from '../services/api';
+import Pagination, { usePagination } from '../components/shared/Pagination';
+import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 const Students = () => {
   const [students, setStudents] = useState([]);
@@ -8,6 +11,9 @@ const Students = () => {
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState('');
   const [formData, setFormData] = useState({ firstName: '', lastName: '', studentId: '', grade: '', section: '', dateOfBirth: '', gender: 'male', parentName: '', parentPhone: '', address: '' });
+  const notify = useToast();
+  const confirm = useConfirm();
+  const pagination = usePagination(students);
 
   useEffect(() => { fetchStudents(); }, [search]);
 
@@ -17,6 +23,7 @@ const Students = () => {
       setStudents(data);
     } catch (error) {
       console.error('Failed to fetch students:', error);
+      notify({ type: 'error', title: 'Could not load students', message: error.response?.data?.error || 'Please refresh and try again.' });
     } finally {
       setLoading(false);
     }
@@ -34,8 +41,10 @@ const Students = () => {
       setEditingId(null);
       setFormData({ firstName: '', lastName: '', studentId: '', grade: '', section: '', dateOfBirth: '', gender: 'male', parentName: '', parentPhone: '', address: '' });
       fetchStudents();
+      notify({ type: 'success', title: editingId ? 'Student updated' : 'Student added', message: 'The student record has been saved.' });
     } catch (error) {
       console.error('Failed to save student:', error);
+      notify({ type: 'error', title: 'Could not save student', message: error.response?.data?.error || 'Please check the details and try again.' });
     }
   };
 
@@ -57,12 +66,15 @@ const Students = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this student?')) {
+    const student = students.find((item) => item._id === id);
+    if (await confirm({ title: 'Delete student record?', message: `This will remove ${student?.firstName || 'this student'} ${student?.lastName || ''} from the student directory.`, confirmLabel: 'Delete student' })) {
       try {
         await studentAPI.remove(id);
         fetchStudents();
+        notify({ type: 'success', title: 'Student deleted', message: 'The student record was removed.' });
       } catch (error) {
         console.error('Failed to delete student:', error);
+        notify({ type: 'error', title: 'Could not delete student', message: error.response?.data?.error || 'Please try again.' });
       }
     }
   };
@@ -91,7 +103,7 @@ const Students = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {students.map((s) => (
+              {pagination.items.map((s) => (
                 <tr key={s._id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm">{s.studentId}</td>
                   <td className="px-4 py-3 text-sm">{s.firstName} {s.lastName}</td>
@@ -106,6 +118,7 @@ const Students = () => {
               {students.length === 0 && <tr><td colSpan="5" className="px-4 py-3 text-center text-gray-500">No students found</td></tr>}
             </tbody>
           </table>
+          <Pagination {...pagination} total={students.length} />
         </div>
       )}
       {showModal && (

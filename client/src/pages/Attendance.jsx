@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { attendanceAPI, studentAPI } from '../services/api';
+import Pagination, { usePagination } from '../components/shared/Pagination';
+import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 const getLocalDateKey = () => {
   const date = new Date();
@@ -12,6 +15,12 @@ const Attendance = () => {
   const [records, setRecords] = useState({});
   const [selectedDate, setSelectedDate] = useState(getLocalDateKey);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const notify = useToast();
+  const confirm = useConfirm();
+  const filteredStudents = students.filter((student) => `${student.firstName} ${student.lastName} ${student.studentId} ${student.grade}`.toLowerCase().includes(search.toLowerCase()));
+  const pagination = usePagination(filteredStudents);
 
   useEffect(() => {
     setLoading(true);
@@ -55,6 +64,8 @@ const Attendance = () => {
   };
 
   const handleSubmit = async () => {
+    if (saving) return;
+    setSaving(true);
     try {
       const existingByStudent = new Map(attendance.map((record) => [record.student._id, record]));
       await Promise.all(Object.entries(records).map(([studentId, status]) => {
@@ -62,16 +73,16 @@ const Attendance = () => {
         const existing = existingByStudent.get(studentId);
         return existing ? attendanceAPI.update(existing._id, data) : attendanceAPI.create(data);
       }));
-      alert('Attendance saved successfully');
+      notify({ type: 'success', title: 'Attendance saved', message: `${Object.keys(records).length} student records saved for ${selectedDate}.` });
       fetchAttendance();
     } catch (error) {
       console.error('Failed to save attendance:', error);
-      alert('Failed to save attendance');
-    }
+      notify({ type: 'error', title: 'Could not save attendance', message: error.response?.data?.error || 'Please try again.' });
+    } finally { setSaving(false); }
   };
 
   const handleDelete = async (record) => {
-    if (!window.confirm(`Clear attendance for ${record.student.firstName} ${record.student.lastName}?`)) return;
+    if (!await confirm({ title: 'Clear attendance record?', message: `Remove the ${selectedDate} attendance record for ${record.student.firstName} ${record.student.lastName}?`, confirmLabel: 'Clear record' })) return;
     try {
       await attendanceAPI.remove(record._id);
       setAttendance((current) => current.filter((item) => item._id !== record._id));
@@ -80,8 +91,9 @@ const Attendance = () => {
         delete next[record.student._id];
         return next;
       });
+      notify({ type: 'success', title: 'Attendance cleared', message: 'The record was removed.' });
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to clear attendance');
+      notify({ type: 'error', title: 'Could not clear attendance', message: error.response?.data?.error || 'Please try again.' });
     }
   };
 
@@ -100,8 +112,9 @@ const Attendance = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Attendance</h1>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
+          <input type="search" aria-label="Search attendance students" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search students..." className="input-field w-full sm:w-56" />
           <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="input-field w-full sm:w-auto" />
-          <button onClick={handleSubmit} className="btn-primary w-full whitespace-nowrap sm:w-auto">Save Attendance</button>
+          <button onClick={handleSubmit} disabled={saving || loading} className="btn-primary w-full whitespace-nowrap sm:w-auto disabled:cursor-wait disabled:opacity-60">{saving ? 'Saving…' : 'Save Attendance'}</button>
         </div>
       </div>
       {loading ? <div className="text-center py-8">Loading...</div> : (
@@ -117,7 +130,7 @@ const Attendance = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {students.map((s) => (
+              {pagination.items.map((s) => (
                 <tr key={s._id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm">{s.studentId}</td>
                   <td className="px-4 py-3 text-sm">{s.firstName} {s.lastName}</td>
@@ -144,9 +157,10 @@ const Attendance = () => {
                   </td>
                 </tr>
               ))}
-              {students.length === 0 && <tr><td colSpan="5" className="px-4 py-3 text-center text-gray-500">No students found. Add students first.</td></tr>}
+              {filteredStudents.length === 0 && <tr><td colSpan="5" className="px-4 py-3 text-center text-gray-500">{students.length === 0 ? 'No students found. Add students first.' : 'No students match your search.'}</td></tr>}
             </tbody>
           </table>
+          <Pagination {...pagination} total={filteredStudents.length} />
         </div>
       )}
     </div>

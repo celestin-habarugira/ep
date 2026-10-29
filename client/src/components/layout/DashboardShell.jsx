@@ -35,7 +35,7 @@ const DashboardShell = ({ children }) => {
   const sidebarContent = (
     <>
       <div className={`flex h-20 items-center border-b border-white/10 px-4 ${collapsed ? 'lg:justify-center lg:px-2' : 'gap-3'}`}>
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-sm font-black text-white">EP</div>
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-blue-500 text-sm font-black text-white">EP</div>
         <div className={collapsed ? 'lg:hidden' : ''}>
           <Link to="/" className="block text-sm font-bold text-white">EP. Cyumushyika</Link>
           <span className="text-xs text-slate-400">School workspace</span>
@@ -46,7 +46,7 @@ const DashboardShell = ({ children }) => {
       <div className={`px-4 pt-6 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 ${collapsed ? 'lg:hidden' : ''}`}>Workspace</div>
       <nav className="mt-3 flex-1 space-y-1 px-3" aria-label="Main navigation">
         {navItems.map((item) => (
-          <NavLink key={item.path} to={item.path} title={collapsed ? item.label : undefined} className={({ isActive }) => `flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${isActive ? 'bg-emerald-500 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'} ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}>
+          <NavLink key={item.path} to={item.path} title={collapsed ? item.label : undefined} className={({ isActive }) => `flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${isActive ? 'bg-blue-500 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'} ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}>
             <span aria-hidden="true" className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-[10px] font-bold ${location.pathname === item.path ? 'bg-white/15 text-white' : 'bg-slate-800 text-slate-300'}`}>{item.mark}</span>
             <span className={collapsed ? 'lg:hidden' : ''}>{item.label}</span>
           </NavLink>
@@ -59,7 +59,7 @@ const DashboardShell = ({ children }) => {
           <span className={collapsed ? 'lg:hidden' : ''}>Public home</span>
         </Link>
         <div className={`flex items-center gap-3 rounded-xl bg-slate-800/80 p-2 ${collapsed ? 'lg:justify-center' : ''}`}>
-          {user?.photo ? <img src={resolveAssetUrl(user.photo)} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover" /> : <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white">{user?.firstName?.[0]}{user?.lastName?.[0]}</div>}
+          {user?.photo ? <img src={resolveAssetUrl(user.photo)} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover" /> : <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-700 text-xs font-bold text-white">{user?.firstName?.[0]}{user?.lastName?.[0]}</div>}
           <div className={`min-w-0 flex-1 ${collapsed ? 'lg:hidden' : ''}`}><p className="truncate text-xs font-semibold text-white">{user?.firstName} {user?.lastName}</p><p className="truncate text-[10px] capitalize text-slate-400">{user?.role || 'Staff'}</p></div>
           <button type="button" onClick={handleLogout} title="Sign out" className={`rounded-lg px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white ${collapsed ? 'lg:hidden' : ''}`}>Sign out</button>
         </div>

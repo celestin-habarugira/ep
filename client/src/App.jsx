@@ -11,6 +11,8 @@ import Attendance from './pages/Attendance';
 import Performance from './pages/Performance';
 import Employees from './pages/Employees';
 import Chat from './pages/Chat';
+import { ToastProvider } from './context/ToastContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -20,6 +22,7 @@ const PrivateRoute = ({ children }) => {
 
 function App() {
   return (
+    <ToastProvider><ConfirmProvider>
     <BrowserRouter>
       <AuthProvider>
         <Routes>
@@ -35,6 +38,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+    </ConfirmProvider></ToastProvider>
   );
 }
 

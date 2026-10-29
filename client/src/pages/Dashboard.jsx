@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { attendanceAPI, employeeAPI, performanceAPI, studentAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 const localDateKey = (date) => {
   const year = date.getFullYear();
@@ -24,6 +25,7 @@ const statusStyles = {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const notify = useToast();
   const [reportDate, setReportDate] = useState(localDateKey(new Date()));
   const [reportPeriod, setReportPeriod] = useState('daily');
   const [students, setStudents] = useState([]);
@@ -69,10 +71,13 @@ const Dashboard = () => {
     else issues.push('performance records');
     if (employeesResult.status === 'fulfilled') setEmployees(employeesResult.value.data);
     else issues.push('employee records');
-    if (issues.length) setLoadError(`Some dashboard data could not be loaded: ${issues.join(', ')}.`);
+    if (issues.length) {
+      setLoadError(`Some dashboard data could not be loaded: ${issues.join(', ')}.`);
+      notify({ type: 'warning', title: 'Dashboard data is incomplete', message: `Could not load ${issues.join(', ')}.` });
+    }
     setLoading(false);
     setRefreshing(false);
-  }, [reportRange.endDate, reportRange.startDate]);
+  }, [notify, reportRange.endDate, reportRange.startDate]);
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
@@ -136,7 +141,8 @@ const Dashboard = () => {
     link.href = blobUrl;
     link.download = `ep-cyumushyika-${reportPeriod}-report-${reportRange.startDate}-to-${reportRange.endDate}.csv`;
     link.click();
-    URL.revokeObjectURL(blobUrl);
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    notify({ type: 'success', title: 'Report downloaded', message: `${periodTitle} attendance report saved as CSV.` });
   };
 
   const reportStatuses = [
@@ -147,7 +153,7 @@ const Dashboard = () => {
   ];
   const quickLinks = [
     { label: 'Students', detail: 'Manage enrollment and student details', to: '/students', tone: 'text-blue-700 bg-blue-50' },
-    { label: 'Attendance', detail: 'Record and review daily attendance', to: '/attendance', tone: 'text-emerald-700 bg-emerald-50' },
+    { label: 'Attendance', detail: 'Record and review daily attendance', to: '/attendance', tone: 'text-blue-700 bg-blue-50' },
     { label: 'Performance', detail: 'Track marks and academic progress', to: '/performance', tone: 'text-violet-700 bg-violet-50' },
     { label: 'Employees', detail: 'Manage the school team', to: '/employees', tone: 'text-amber-700 bg-amber-50' },
     { label: 'Chat', detail: 'Open staff messages and groups', to: '/chat', tone: 'text-sky-700 bg-sky-50' },
@@ -157,7 +163,7 @@ const Dashboard = () => {
 
   const cards = [
     { label: 'Students enrolled', value: students.length, hint: 'Active student records', to: '/students', color: 'text-blue-700 bg-blue-50' },
-    { label: 'Attendance records', value: counts.marked, hint: `${counts.daysWithRecords} days with records`, to: '/attendance', color: 'text-emerald-700 bg-emerald-50' },
+    { label: 'Attendance records', value: counts.marked, hint: `${counts.daysWithRecords} days with records`, to: '/attendance', color: 'text-blue-700 bg-blue-50' },
     { label: 'Needs follow-up', value: counts.absent + counts.late, hint: `${counts.absent} absent · ${counts.late} late`, to: '/attendance', color: 'text-rose-700 bg-rose-50' },
     { label: 'Academic average', value: averageScore === null ? '—' : `${averageScore}%`, hint: `${currentYearPerformances.length} records this year`, to: '/performance', color: 'text-violet-700 bg-violet-50' },
     { label: 'School team', value: employees.length, hint: 'Active employees', to: '/employees', color: 'text-amber-700 bg-amber-50' },
@@ -199,7 +205,7 @@ const Dashboard = () => {
           </div>
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end">
             <div className="grid grid-cols-3 rounded-lg border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="Report period">
-              {['daily', 'weekly', 'monthly'].map((period) => <button key={period} type="button" role="tab" aria-selected={reportPeriod === period} onClick={() => setReportPeriod(period)} className={`rounded-md px-3 py-2 text-xs font-semibold capitalize sm:text-sm ${reportPeriod === period ? 'bg-emerald-700 text-white' : 'text-slate-600 hover:bg-white'}`}>{period}</button>)}
+              {['daily', 'weekly', 'monthly'].map((period) => <button key={period} type="button" role="tab" aria-selected={reportPeriod === period} onClick={() => setReportPeriod(period)} className={`rounded-md px-3 py-2 text-xs font-semibold capitalize sm:text-sm ${reportPeriod === period ? 'bg-blue-700 text-white' : 'text-slate-600 hover:bg-white'}`}>{period}</button>)}
             </div>
             <label className="w-full text-sm font-medium text-slate-700 sm:w-auto">{reportPeriod === 'monthly' ? 'Month' : 'Reference date'}
               <input type={reportPeriod === 'monthly' ? 'month' : 'date'} value={reportPeriod === 'monthly' ? reportDate.slice(0, 7) : reportDate} onChange={(event) => event.target.value && setReportDate(reportPeriod === 'monthly' ? `${event.target.value}-01` : event.target.value)} className="input-field mt-1 min-w-0 sm:w-52" />
@@ -238,7 +244,7 @@ const Dashboard = () => {
                     const value = attendanceByDate[day] || 0;
                     return <div key={day} className="flex min-w-0 flex-1 flex-col items-center gap-1" title={`${day}: ${value} records`}>
                       <span className="text-[10px] font-medium text-slate-600">{value || ''}</span>
-                      <span className="w-full rounded-t bg-emerald-700" style={{ height: `${Math.max(4, Math.round((value / maxDailyMarks) * 72))}px`, opacity: value ? 1 : 0.18 }} />
+                      <span className="w-full rounded-t bg-blue-700" style={{ height: `${Math.max(4, Math.round((value / maxDailyMarks) * 72))}px`, opacity: value ? 1 : 0.18 }} />
                       <span className="text-[9px] text-slate-500">{day.slice(8)}</span>
                     </div>;
                   })}
@@ -249,7 +255,7 @@ const Dashboard = () => {
           <div className="min-w-0 rounded-xl border border-slate-200 p-4 sm:p-5">
             <div className="flex items-center justify-between gap-2"><h3 className="font-semibold text-slate-900">Follow-up list</h3><Link to="/attendance" className="text-sm font-semibold text-primary-700 hover:text-primary-900">Open attendance</Link></div>
             {absentees.length + lateStudents.length === 0 ? (
-              <p className="mt-4 rounded-lg bg-emerald-50 px-3 py-3 text-sm text-emerald-800">No absent or late students recorded for this date.</p>
+              <p className="mt-4 rounded-lg bg-blue-50 px-3 py-3 text-sm text-blue-800">No absent or late students recorded for this date.</p>
             ) : (
               <ul className="mt-3 max-h-44 space-y-2 overflow-y-auto">
                 {[...absentees.map((record) => ({ ...record, status: 'absent' })), ...lateStudents.map((record) => ({ ...record, status: 'late' }))].map((record) => (

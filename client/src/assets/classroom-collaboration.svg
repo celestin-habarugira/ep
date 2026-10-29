@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 480" role="img" aria-labelledby="title desc">
+  <title id="title">Students collaborating on classwork</title>
+  <desc id="desc">A small group of learners work together around a classroom table.</desc>
+  <rect width="720" height="480" rx="28" fill="#eaf2ff"/>
+  <rect x="50" y="48" width="620" height="270" rx="16" fill="#fff" stroke="#c8d7ed" stroke-width="7"/>
+  <rect x="84" y="82" width="552" height="198" rx="10" fill="#dcecff"/>
+  <rect x="123" y="120" width="150" height="105" rx="12" fill="#fff"/>
+  <path d="M146 149h103m-103 28h77m-77 25h94" stroke="#6f8db5" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="386" cy="178" r="40" fill="#8b543d"/>
+  <path d="M340 270c0-48 20-68 46-68s46 20 46 68v22h-92z" fill="#2563eb"/>
+  <path d="M349 174c4-29 18-46 39-46s36 18 40 46c-24 7-53 7-79 0z" fill="#1f2937"/>
+  <circle cx="514" cy="222" r="32" fill="#d59b76"/>
+  <path d="M475 291c0-42 17-60 39-60s39 18 39 60v10h-78z" fill="#25a879"/>
+  <circle cx="283" cy="222" r="32" fill="#6b422f"/>
+  <path d="M244 291c0-42 17-60 39-60s39 18 39 60v10h-78z" fill="#f2ad45"/>
+  <path d="M161 330h398l-38 74H199z" fill="#b87b42"/>
+  <path d="M245 402v57m230-57v57" stroke="#77512e" stroke-width="15" stroke-linecap="round"/>
+  <rect x="289" y="345" width="116" height="46" rx="8" fill="#fff"/>
+  <path d="M311 361h72m-72 16h50" stroke="#3b82f6" stroke-width="6" stroke-linecap="round"/>
+</svg>
